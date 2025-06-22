@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Scanner;
 
 public class TodoApp {
-    private TodoController controller;
-    private Scanner scanner;
+    private final TodoController controller;
+    private final Scanner scanner;
 
     public TodoApp() {
         controller = new TodoController();
