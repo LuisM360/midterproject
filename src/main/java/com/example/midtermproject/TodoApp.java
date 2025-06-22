@@ -1,115 +1,146 @@
 package com.example.midtermproject;
 
-import javafx.application.Application;
-import javafx.geometry.Insets;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
+import java.util.List;
+import java.util.Scanner;
 
-public class TodoApp extends Application {
+public class TodoApp {
     private TodoController controller;
-    private ListView<TodoItem> todoListView;
-    private TextField newTodoField;
-    private Label statusLabel;
+    private Scanner scanner;
 
-    @Override
-    public void start(Stage primaryStage) {
+    public TodoApp() {
         controller = new TodoController();
-
-        createComponents();
-
-        VBox root = new VBox(10);
-        root.setPadding(new Insets(20));
-
-        HBox inputBox = new HBox(10);
-        inputBox.getChildren().addAll(newTodoField, createAddButton());
-
-        root.getChildren().addAll(
-                new Label("Todo List"),
-                inputBox,
-                todoListView,
-                createButtonBox(),
-                statusLabel
-        );
-
-        Scene scene = new Scene(root, 400, 500);
-        primaryStage.setTitle("Todo List App");
-        primaryStage.setScene(scene);
-        primaryStage.show();
-
-        updateStatus();
+        scanner = new Scanner(System.in);
     }
 
-    private void createComponents() {
-        todoListView = new ListView<>();
-        newTodoField = new TextField();
-        newTodoField.setPromptText("Enter new todo item...");
-        statusLabel = new Label();
+    public void run() {
+        System.out.println("=== Todo List Application ===");
+        System.out.println("Welcome to your personal todo manager!");
 
-        newTodoField.setOnAction(e -> addTodoItem());
-    }
+        while (true) {
+            displayMenu();
+            String choice = scanner.nextLine().trim();
 
-    private Button createAddButton() {
-        Button addButton = new Button("Add");
-        addButton.setOnAction(e -> addTodoItem());
-        return addButton;
-    }
-
-    private HBox createButtonBox() {
-        Button toggleButton = new Button("Toggle Complete");
-        Button deleteButton = new Button("Delete");
-
-        toggleButton.setOnAction(e -> toggleSelectedItem());
-        deleteButton.setOnAction(e -> deleteSelectedItem());
-
-        HBox buttonBox = new HBox(10);
-        buttonBox.getChildren().addAll(toggleButton, deleteButton);
-        return buttonBox;
-    }
-
-    private void addTodoItem() {
-        String text = newTodoField.getText();
-        if (!text.trim().isEmpty()) {
-            controller.addTodoItem(text);
-            newTodoField.clear();
-            refreshListView();
-            updateStatus();
+            switch (choice) {
+                case "1" -> addTodo();
+                case "2" -> listTodos();
+                case "3" -> toggleTodo();
+                case "4" -> deleteTodo();
+                case "5" -> showStats();
+                case "6" -> {
+                    System.out.println("Goodbye!");
+                    return;
+                }
+                default -> System.out.println("Invalid choice. Please try again.");
+            }
+            System.out.println(); // Empty line for readability
         }
     }
 
-    private void toggleSelectedItem() {
-        TodoItem selected = todoListView.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            controller.toggleTodoItem(selected);
-            refreshListView();
-            updateStatus();
+    private void displayMenu() {
+        System.out.println("\n--- Todo Menu ---");
+        System.out.println("1. Add todo");
+        System.out.println("2. List todos");
+        System.out.println("3. Toggle todo completion");
+        System.out.println("4. Delete todo");
+        System.out.println("5. Show statistics");
+        System.out.println("6. Exit");
+        System.out.print("Choose an option: ");
+    }
+
+    private void addTodo() {
+        System.out.print("Enter todo description: ");
+        String description = scanner.nextLine().trim();
+
+        if (description.isEmpty()) {
+            System.out.println("Description cannot be empty!");
+            return;
+        }
+
+        controller.addTodoItem(description);
+        System.out.println("Todo added successfully!");
+    }
+
+    private void listTodos() {
+        List<TodoItem> todos = controller.getAllTodoItems();
+
+        if (todos.isEmpty()) {
+            System.out.println("No todos found. Add some tasks to get started!");
+            return;
+        }
+
+        System.out.println("\n--- Your Todos ---");
+        for (int i = 0; i < todos.size(); i++) {
+            System.out.printf("%d. %s%n", i + 1, todos.get(i));
         }
     }
 
-    private void deleteSelectedItem() {
-        TodoItem selected = todoListView.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            controller.removeTodoItem(selected);
-            refreshListView();
-            updateStatus();
+    private void toggleTodo() {
+        List<TodoItem> todos = controller.getAllTodoItems();
+
+        if (todos.isEmpty()) {
+            System.out.println("No todos to toggle!");
+            return;
+        }
+
+        listTodos();
+        System.out.print("Enter todo number to toggle: ");
+
+        try {
+            int index = Integer.parseInt(scanner.nextLine().trim()) - 1;
+
+            if (index >= 0 && index < todos.size()) {
+                controller.toggleTodoItem(todos.get(index));
+                System.out.println("Todo toggled successfully!");
+            } else {
+                System.out.println("Invalid todo number!");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Please enter a valid number!");
         }
     }
 
-    private void refreshListView() {
-        todoListView.getItems().clear();
-        todoListView.getItems().addAll(controller.getAllTodoItems());
+    private void deleteTodo() {
+        List<TodoItem> todos = controller.getAllTodoItems();
+
+        if (todos.isEmpty()) {
+            System.out.println("No todos to delete!");
+            return;
+        }
+
+        listTodos();
+        System.out.print("Enter todo number to delete: ");
+
+        try {
+            int index = Integer.parseInt(scanner.nextLine().trim()) - 1;
+
+            if (index >= 0 && index < todos.size()) {
+                controller.removeTodoItem(todos.get(index));
+                System.out.println("Todo deleted successfully!");
+            } else {
+                System.out.println("Invalid todo number!");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Please enter a valid number!");
+        }
     }
 
-    private void updateStatus() {
+    private void showStats() {
         int total = controller.getTotalCount();
         int completed = controller.getCompletedCount();
-        statusLabel.setText(String.format("Total: %d | Completed: %d | Pending: %d",
-                total, completed, total - completed));
+        int pending = total - completed;
+
+        System.out.println("\n--- Statistics ---");
+        System.out.printf("Total todos: %d%n", total);
+        System.out.printf("Completed: %d%n", completed);
+        System.out.printf("Pending: %d%n", pending);
+
+        if (total > 0) {
+            double completionRate = (double) completed / total * 100;
+            System.out.printf("Completion rate: %.1f%%%n", completionRate);
+        }
     }
 
     public static void main(String[] args) {
-        launch(args);
+        new TodoApp().run();
     }
 }
